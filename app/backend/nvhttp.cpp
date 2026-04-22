@@ -226,16 +226,15 @@ NvHTTP::startApp(QString verb,
                                            if (!fullOverride.isEmpty()) {
                                                return fullOverride;
                                            }
-                                           // Convenience: just set peak nits, use sRGB primaries + D65 white point.
-                                           // sRGB: R(32000,16500) G(15000,30000) B(7500,3000) W(15635,16450)
+                                           // Convenience: just set peak nits, use Rec.2020 primaries + D65 white point.
+                                           // Rec.2020: R(35400,14600) G(8500,39850) B(6550,2300) W(15635,16450)
                                            QString maxNitsStr = env.value("MOONLIGHT_HDR_MAX_NITS");
                                            if (!maxNitsStr.isEmpty()) {
                                                bool ok;
                                                int maxNits = maxNitsStr.toInt(&ok);
                                                if (ok && maxNits > 0) {
-                                                   int minLum = qMax(1, maxNits / 10000); // ~0.0001 nit floor
-                                                   return QString("32000x16500x15000x30000x7500x3000x15635x16450x%1x%2x%1")
-                                                          .arg(maxNits).arg(minLum);
+                                                   return QString("35400x14600x8500x39850x6550x2300x15635x16450x%1x0x%1")
+                                                          .arg(maxNits);
                                                }
                                            }
                                            // Default: all zeros lets GFE choose (3805 nit Rec.2020 reference).
