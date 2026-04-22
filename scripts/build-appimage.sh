@@ -35,9 +35,8 @@ pushd $BUILD_FOLDER
 # We build with Wayland support, but exclude libwayland-client.so and related Wayland libraries from
 # the AppImage using linuxdeployqt's -exclude-libs option. This prevents libEGL_mesa.so from failing
 # to load due to missing symbols from the host's version of libwayland-client.so.
-#
-# We disable DRM support because linuxdeployqt doesn't bundle the appropriate libraries for Qt EGLFS.
-qmake6 $SOURCE_ROOT/moonlight-qt.pro CONFIG+=disable-libdrm PREFIX=$DEPLOY_FOLDER/usr DEFINES+=APP_IMAGE || fail "Qmake failed!"
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+qmake6 $SOURCE_ROOT/moonlight-qt.pro PREFIX=$DEPLOY_FOLDER/usr DEFINES+=APP_IMAGE || fail "Qmake failed!"
 popd
 
 echo Compiling Moonlight in $BUILD_CONFIG configuration
