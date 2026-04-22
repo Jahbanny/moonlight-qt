@@ -61,7 +61,7 @@ pushd $INSTALLER_FOLDER
 export QT_PLUGIN_PATH=$(qmake6 -query QT_INSTALL_PLUGINS)
 VERSION=$VERSION linuxdeployqt $DEPLOY_FOLDER/usr/share/applications/com.moonlight_stream.Moonlight.desktop \
   -qmake=qmake6 -qmldir=$SOURCE_ROOT/app/gui -appimage -extra-plugins=tls,platforms/libqwayland-generic.so,platforms/libqwayland-egl.so,wayland-graphics-integration-client,wayland-shell-integration,wayland-decoration-client \
-  -exclude-libs=libwayland-client.so.0,libwayland-cursor.so.0,libwayland-egl.so.1,libdrm.so.2 \
+  -exclude-libs=libwayland-client.so.0,libwayland-cursor.so.0,libwayland-egl.so.1,libdrm.so.2,libgbm.so.1,libvulkan.so.1 \
   -executable=$DEPLOY_FOLDER/usr/lib/libSDL3.so.0 || fail "linuxdeployqt failed!"
 popd
 
