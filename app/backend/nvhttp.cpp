@@ -11,6 +11,7 @@
 #include <QImageReader>
 #include <QtEndian>
 #include <QNetworkProxy>
+#include <QProcessEnvironment>
 
 #define FAST_FAIL_TIMEOUT_MS 2000
 #define REQUEST_TIMEOUT_MS 5000
@@ -216,7 +217,30 @@ NvHTTP::startApp(QString verb,
                                    "&rikey="+QByteArray(streamConfig->remoteInputAesKey, sizeof(streamConfig->remoteInputAesKey)).toHex()+
                                    "&rikeyid="+QString::number(riKeyId)+
                                    ((streamConfig->supportedVideoFormats & VIDEO_FORMAT_MASK_10BIT) ?
-                                       "&hdrMode=1&clientHdrCapVersion=0&clientHdrCapSupportedFlagsInUint32=0&clientHdrCapMetaDataId=NV_STATIC_METADATA_TYPE_1&clientHdrCapDisplayData=0x0x0x0x0x0x0x0x0x0x0" :
+                                       ("&hdrMode=1&clientHdrCapVersion=0&clientHdrCapSupportedFlagsInUint32=0&clientHdrCapMetaDataId=NV_STATIC_METADATA_TYPE_1&clientHdrCapDisplayData=" + []() -> QString {
+                                           // Allow full override via MOONLIGHT_HDR_DISPLAY_DATA env var.
+                                           // Format: Rx x Ry x Gx x Gy x Bx x By x Wx x Wy x MaxLum x MinLum x MaxCLL
+                                           // (chromaticities in units of 1/50000, luminances in cd/m²)
+                                           QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+                                           QString fullOverride = env.value("MOONLIGHT_HDR_DISPLAY_DATA");
+                                           if (!fullOverride.isEmpty()) {
+                                               return fullOverride;
+                                           }
+                                           // Convenience: just set peak nits, use sRGB primaries + D65 white point.
+                                           // sRGB: R(32000,16500) G(15000,30000) B(7500,3000) W(15635,16450)
+                                           QString maxNitsStr = env.value("MOONLIGHT_HDR_MAX_NITS");
+                                           if (!maxNitsStr.isEmpty()) {
+                                               bool ok;
+                                               int maxNits = maxNitsStr.toInt(&ok);
+                                               if (ok && maxNits > 0) {
+                                                   int minLum = qMax(1, maxNits / 10000); // ~0.0001 nit floor
+                                                   return QString("32000x16500x15000x30000x7500x3000x15635x16450x%1x%2x%1")
+                                                          .arg(maxNits).arg(minLum);
+                                               }
+                                           }
+                                           // Default: all zeros lets GFE choose (3805 nit Rec.2020 reference).
+                                           return QStringLiteral("0x0x0x0x0x0x0x0x0x0x0");
+                                       }()) :
                                         "")+
                                    "&localAudioPlayMode="+QString::number(localAudio ? 1 : 0)+
                                    "&surroundAudioInfo="+QString::number(SURROUNDAUDIOINFO_FROM_AUDIO_CONFIGURATION(streamConfig->audioConfiguration))+
